@@ -11,7 +11,7 @@ echo ""
 
 # Configuration
 VLLM_PORT=${VLLM_PORT:-8000}
-VLLM_MODEL=${VLLM_MODEL:-"google/gemma-4-27b-it"}
+VLLM_MODEL=${VLLM_MODEL:-"/home/dgx-spark-01/ai_data/models/gemma-4-26b-moe"}
 BASE_URL="http://localhost:${VLLM_PORT}/v1"
 API_KEY="local"
 
@@ -38,9 +38,6 @@ echo "[INFO] Environment configured:"
 echo "  LLM_MODEL: ${LLM_MODEL}"
 echo "  BASE_URL: ${BASE_URL}"
 echo ""
-
-# Change to artifact directory
-cd artifact
 
 # Run tests with logging
 echo "[INFO] Starting test execution with logging..."

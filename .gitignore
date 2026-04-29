@@ -4,6 +4,10 @@ test_logs/
 # Virtual environment
 .venv-clouseau/
 .venv/
+win_venv/
+
+# Local Results
+*results.csv
 
 # Python
 __pycache__/

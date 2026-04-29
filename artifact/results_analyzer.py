@@ -203,11 +203,28 @@ def main():
     runs = analyzer.get_all_runs()
     print(f"Available runs: {runs}\n")
     
-    # Compare latest two runs if available
-    if len(runs) >= 2:
-        analyzer.generate_comparison_report(runs[1], runs[0])
+    # Find first pair of runs with actual results
+    runs_with_results = []
+    for run_id in runs:
+        results_file = Path("test_logs") / run_id / "test_results.csv"
+        if results_file.exists():
+            try:
+                df = pd.read_csv(results_file)
+                if len(df) > 0:
+                    runs_with_results.append(run_id)
+            except Exception as e:
+                print(f"Could not read {results_file}: {e}")
+    
+    print(f"Runs with results: {runs_with_results}\n")
+    
+    # Compare latest two runs with results if available
+    if len(runs_with_results) >= 2:
+        analyzer.generate_comparison_report(runs_with_results[1], runs_with_results[0])
     else:
-        print("Need at least 2 runs to compare.")
+        if len(runs_with_results) == 1:
+            print(f"Only 1 run has results. Need at least 2 runs to compare.")
+        else:
+            print("No runs with results yet. Run tests first.")
 
 
 if __name__ == "__main__":

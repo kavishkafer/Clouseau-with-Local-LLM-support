@@ -23,7 +23,7 @@ class LoggingTestRunner:
     def run_scenario_test(
         self,
         scenario_type: str,
-        csv_file: str,
+        output_csv: str,
         claim_name: str
     ) -> bool:
         """
@@ -31,7 +31,7 @@ class LoggingTestRunner:
         
         Args:
             scenario_type: Type of scenario (--scenarios-si, --scenarios-se, --scenarios-ss)
-            csv_file: Path to CSV file with test scenarios
+            output_csv: Path where app.py will save results
             claim_name: Name of the claim being tested
         
         Returns:
@@ -39,42 +39,40 @@ class LoggingTestRunner:
         """
         print(f"\n{'='*70}")
         print(f"Running test: {claim_name} ({scenario_type})")
-        print(f"CSV file: {csv_file}")
+        print(f"Output CSV: {output_csv}")
         print(f"{'='*70}\n")
         
-        # Check if CSV file exists
-        csv_path = Path(csv_file)
-        if not csv_path.exists():
-            print(f"❌ CSV file not found: {csv_file}")
-            return False
-        
-        # Build command
+        # Build command - app.py handles scenario selection, --csv-file is for output
         cmd = [
             sys.executable,
             "app.py",
             scenario_type,
-            "--csv-file", csv_file,
+            "--csv-file", output_csv,
             "--no-warn"
         ]
         
         print(f"Running command: {' '.join(cmd)}\n")
         
         try:
-            # Run the test
+            # Run the test with environment variables
+            env = os.environ.copy()
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=3600  # 1 hour timeout
+                timeout=21600,  # 6 hour timeout
+                env=env
             )
             
             if result.returncode != 0:
                 print(f"⚠️  Test exited with code {result.returncode}")
+                if result.stdout:
+                    print(f"Output:\n{result.stdout}")
                 if result.stderr:
                     print(f"Error output:\n{result.stderr}")
             
-            # Parse results from CSV
-            results_csv_path = Path(csv_file).parent / "average.csv"
+            # Parse results from the output CSV that app.py created
+            results_csv_path = Path(output_csv)
             if results_csv_path.exists():
                 results_df = pd.read_csv(results_csv_path)
                 
@@ -101,7 +99,7 @@ class LoggingTestRunner:
                 return False
         
         except subprocess.TimeoutExpired:
-            print(f"❌ Test timed out after 1 hour")
+            print(f"❌ Test timed out after 6 hours")
             return False
         except Exception as e:
             print(f"❌ Error running test: {e}")
@@ -113,17 +111,17 @@ class LoggingTestRunner:
             {
                 "name": "Claim 1",
                 "scenario_type": "--scenarios-si",
-                "csv_file": "../claims/claim1/scenarios.csv"
+                "output_csv": "claim1_results.csv"
             },
             {
                 "name": "Claim 2",
                 "scenario_type": "--scenarios-se",
-                "csv_file": "../claims/claim2/scenarios.csv"
+                "output_csv": "claim2_results.csv"
             },
             {
                 "name": "Claim 3",
                 "scenario_type": "--scenarios-ss",
-                "csv_file": "../claims/claim3/scenarios.csv"
+                "output_csv": "claim3_results.csv"
             }
         ]
         
@@ -131,9 +129,10 @@ class LoggingTestRunner:
         failed = 0
         
         for claim in claims:
+            output_path = str(self.logger.run_dir / claim["output_csv"])
             success = self.run_scenario_test(
                 scenario_type=claim["scenario_type"],
-                csv_file=claim["csv_file"],
+                output_csv=output_path,
                 claim_name=claim["name"]
             )
             

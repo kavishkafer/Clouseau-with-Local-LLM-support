@@ -232,16 +232,36 @@ def main():
     runs = analyzer.get_all_runs()
     print(f"Found {len(runs)} runs\n")
     
-    # Visualize each run
+    # Filter runs that have results
+    runs_with_results = []
     for run_id in runs:
-        print(f"Visualizing run: {run_id}")
-        visualizer.visualize_run(run_id)
-        visualizer.visualize_scenario_types(run_id)
+        results_file = Path("test_logs") / run_id / "test_results.csv"
+        if results_file.exists():
+            try:
+                df = pd.read_csv(results_file)
+                if len(df) > 0:
+                    runs_with_results.append(run_id)
+            except Exception as e:
+                print(f"Skipping {run_id}: {e}")
     
-    # Compare consecutive runs
-    if len(runs) >= 2:
-        print(f"\nCreating comparison: {runs[0]} vs {runs[1]}")
-        visualizer.visualize_comparison(runs[1], runs[0])
+    print(f"Runs with results: {len(runs_with_results)}\n")
+    
+    # Visualize each run with results
+    for run_id in runs_with_results:
+        print(f"Visualizing run: {run_id}")
+        try:
+            visualizer.visualize_run(run_id)
+            visualizer.visualize_scenario_types(run_id)
+        except Exception as e:
+            print(f"Could not visualize {run_id}: {e}")
+    
+    # Compare consecutive runs with results
+    if len(runs_with_results) >= 2:
+        print(f"\nCreating comparison: {runs_with_results[0]} vs {runs_with_results[1]}")
+        try:
+            visualizer.visualize_comparison(runs_with_results[1], runs_with_results[0])
+        except Exception as e:
+            print(f"Could not create comparison: {e}")
 
 
 if __name__ == "__main__":
